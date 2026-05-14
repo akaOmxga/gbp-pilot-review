@@ -177,13 +177,22 @@ cd backend
 uv run alembic upgrade head
 ```
 
-Cela crée les **16 tables** + **14 enums Postgres** + l'extension `citext` (cf. PR 2 et `backend/alembic/versions/0001_initial.py`).
+Cela crée les **16 tables** + **14 enums Postgres** + l'extension `citext` (cf. PR 2 et `backend/alembic/versions/0001_initial.py`), puis ajoute la colonne `clients.admin_notes` via la migration `0002_add_admin_notes.py` (Phase 5).
 
 Vérifier :
 
 ```bash
-uv run alembic current             # → 0001 (head)
+uv run alembic current             # → 0002 (head)
 uv run alembic history              # liste des révisions
+```
+
+### Promouvoir un utilisateur en admin (Phase 5)
+
+L'inscription via `/api/v1/auth/signup` crée des comptes `role=client`. Pour accéder à l'espace `/admin` du frontend (`role=admin` requis), promouvoir un compte existant via SQL :
+
+```bash
+docker compose exec postgres psql -U app -d gbp_review_manager -c \
+  "UPDATE users SET role='admin' WHERE email='votre.email@example.com';"
 ```
 
 Pour rollback complet :
@@ -229,12 +238,14 @@ Endpoints disponibles (Phase 3 complète, PR 1 → 15) :
 **Webhooks**
 - `POST /api/v1/webhooks/lemonsqueezy` (HMAC-SHA256 vérifié)
 
-**Admin** (rôle `admin` requis)
-- `GET  /api/v1/admin/validation-queue`
-- `GET  /api/v1/admin/clients` · `POST /api/v1/admin/clients/{id}/{suspend,reactivate}`
-- `POST /api/v1/admin/deletions/{users,clients}/{id}`
-- `GET  /api/v1/admin/monitoring/dlq` · `POST /api/v1/admin/monitoring/dlq/{id}/replay`
-- `GET  /api/v1/admin/monitoring/circuits`
+**Admin** (rôle `admin` requis — Phase 3 + Phase 5)
+- `GET  /api/v1/admin/clients?search=&status=&limit=&offset=`
+- `GET  /api/v1/admin/clients/{id}` · `GET /api/v1/admin/clients/{id}/metrics`
+- `PATCH /api/v1/admin/clients/{id}/notes`
+- `POST /api/v1/admin/clients/{id}/{suspend,reactivate}`
+- `GET  /api/v1/admin/validation-queue?client_id=&order=oldest|newest&offset=`
+- `POST /api/v1/admin/deletions/{users,clients}/{id}` · `POST /api/v1/admin/deletions/responses/{id}` (body `{"reason": "…"}`) · `GET /api/v1/admin/deletions/responses`
+- `GET  /api/v1/admin/monitoring/{dlq,circuits,metrics,oauth-alerts}` · `POST /api/v1/admin/monitoring/dlq/{id}/replay`
 
 Doc OpenAPI auto-générée : http://localhost:8000/docs.
 

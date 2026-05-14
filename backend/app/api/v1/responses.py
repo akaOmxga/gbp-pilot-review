@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentUser
 from app.database import SessionDep
-from app.models.enums import ResponseSource, ResponseStatus
+from app.models.enums import ResponseSource, ResponseStatus, UserRole
 from app.repositories.location_repository import LocationRepository
 from app.repositories.response_repository import ResponseRepository
 from app.repositories.review_repository import ReviewRepository
@@ -15,6 +15,8 @@ router = APIRouter(prefix="/responses", tags=["responses"])
 
 
 async def _ensure_owner(session, response, user) -> None:  # type: ignore[no-untyped-def]
+    if user.role == UserRole.admin:
+        return
     review = await ReviewRepository(session).get(response.review_id)
     if review is None:
         raise HTTPException(404)

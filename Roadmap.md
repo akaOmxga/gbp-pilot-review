@@ -188,27 +188,30 @@ Roadmap complète et chronologique pour le développement, le déploiement et le
 
 ---
 
-## Phase 5 — Développement dashboard admin
+## Phase 5 — Développement dashboard admin ✅
 
-### Vue clients
-- Liste des clients avec recherche et filtres
-- Détail d'un client (historique, métriques, statut)
-- Actions admin (suspension, annotations)
+Backend : migration `0002` ajoute `clients.admin_notes` ; schémas centralisés dans `app/schemas/admin.py` ; service `app/services/admin_metrics.py` pour les agrégats. Frontend : route group `app/admin/*` (Next.js 15) protégée par middleware + garde server-side, partageant les primitives shadcn/ui du dashboard client.
 
-### Vue validation
-- Queue centralisée des réponses en attente (mode Pro/Business)
-- Tri chronologique avec filtres par client
-- Actions rapides (valider, regénérer, rédiger, supprimer)
+### Vue clients ✅
+- Liste avec recherche (`search`) et filtre statut (`status=active|paused|suspended`), pagination `limit/offset`
+- Détail (`GET /admin/clients/{id}` + `GET /admin/clients/{id}/metrics`) : abonnement, OAuth, métriques 30 j, contexte
+- Actions admin : `POST /admin/clients/{id}/suspend|reactivate`, `PATCH /admin/clients/{id}/notes` (annotations internes, persistées dans `clients.admin_notes`)
 
-### Vue monitoring technique
-- Statut des jobs Celery (Flower ou dashboard custom)
-- Erreurs récentes
-- Tokens OAuth en alerte
-- Métriques opérationnelles globales
+### Vue validation ✅
+- Queue centralisée `GET /admin/validation-queue` (tous clients confondus)
+- Filtres `client_id` + `order=oldest|newest` + `offset`
+- Items enrichis (note, auteur, commentaire avis, nom client) pour éviter les sous-requêtes côté front
+- Actions rapides admin sur `/responses/{id}/{approve,cancel,regenerate}` + PATCH édition — la garde `_ensure_owner` accepte désormais `role=admin`
 
-### Vue suppression
-- Interface pour supprimer des réponses publiées par erreur
-- Historique des suppressions
+### Vue monitoring technique ✅
+- `GET /admin/monitoring/metrics` : clients actifs/suspendus/en pause, réponses publiées (24 h), validations pendantes, DLQ, alertes OAuth
+- `GET /admin/monitoring/oauth-alerts` : crédentials `expiring|expired|revoked` enrichis du nom client
+- DLQ (`/admin/monitoring/dlq`) + circuits (`/admin/monitoring/circuits`) déjà disponibles depuis la Phase 3
+- Auto-refresh frontend toutes les 30 s
+
+### Vue suppression ✅
+- `POST /admin/deletions/responses/{response_id}` (raison obligatoire ≥ 3 caractères) : appelle `GoogleBusinessClient.delete_reply`, soft delete + audit (`published_response.deleted`)
+- `GET /admin/deletions/responses` : historique chronologique (audit log filtré par action)
 
 ---
 

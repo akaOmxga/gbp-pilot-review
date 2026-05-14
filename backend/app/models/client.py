@@ -25,3 +25,4 @@ class Client(Base, TimestampMixin, SoftDeleteMixin):
     onboarding_completed_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

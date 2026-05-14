@@ -47,6 +47,12 @@ Phase 3 (backend core) **complète** — 15 PRs livrés :
 - **PR 11 — Notifications** : adapters Resend + Telegram, `NotificationService.dispatch` avec mode immediate vs digest (events critiques `oauth_revoked`/`publish_failed`/`quota_exhausted` toujours immediate), beat task `send_pending_digests` (15 min), 18 templates email/text indexés par `event_type`.
 - **PR 12 — Subscription + Quota + Lemon Squeezy** : webhooks HMAC-SHA256, idempotence via `webhook_events.event_id` UNIQUE, handlers `subscription_created/updated/cancelled/payment_failed/payment_success`, `QuotaService.consume_or_raise` atomique, beat tasks `check_quota_thresholds` (09:00 UTC, alerte 80%/100%) + `purge_expired_data` (03:15 UTC, RGPD).
 - **PR 13 — Admin + audit + RGPD** : helper `audit()`, `/admin/clients/{id}/{suspend,reactivate}`, `/admin/deletions/{users,clients}/{id}`.
+- **Phase 5 — Dashboard admin (backend)** : migration `0002` (colonne `clients.admin_notes`), schémas `app/schemas/admin.py`, service `app/services/admin_metrics.py`. Endpoints supplémentaires :
+  - `GET /admin/clients` enrichi (`search`, `status`, `offset`) ; `GET /admin/clients/{id}` détail ; `PATCH /admin/clients/{id}/notes` ; `GET /admin/clients/{id}/metrics`.
+  - `GET /admin/validation-queue` avec `client_id`, `order=oldest|newest`, `offset`, items enrichis (rating + auteur + nom du client).
+  - `GET /admin/monitoring/metrics` (système) et `GET /admin/monitoring/oauth-alerts` (`expiring|expired|revoked`).
+  - `POST /admin/deletions/responses/{id}` (appel Google `delete_reply` + soft delete + audit) ; `GET /admin/deletions/responses` (historique).
+  - Garde `owner_or_admin` ajoutée sur `/responses/*` pour autoriser l'admin sur les actions rapides.
 - **PR 14 — Tests** : 27 tests unitaires (auth/JWT, encryption Fernet, retry decorator, time.compute_publish_at, signature Lemon Squeezy, templates notifs, OAuth authorize URL, prompt rendering, filtering matrix).
 - **PR 15 — Hardening** : slowapi rate limiting, Sentry SDK conditionnel (FastAPI + Starlette integrations), CORS strict sur `frontend_url`.
 
@@ -58,7 +64,7 @@ Le frontend a été extrait (mai 2026) vers le dépôt voisin
 [`~/Projects/gbp-pilot-review-website/`](../gbp-pilot-review-website/) :
 
 - **Stack** : Next.js 15 App Router · React 19 · TypeScript strict · Tailwind v3 · shadcn/ui · NextAuth v5 · TanStack Query v5 · React Hook Form + Zod · Vitest.
-- **Périmètre** : site marketing public (Home, Features, Pricing, About, Contact, Privacy, Terms, Mentions légales, DPA) + SaaS authentifié (auth, onboarding, dashboard, reviews, pending, settings, billing).
+- **Périmètre** : site marketing public (Home, Features, Pricing, About, Contact, Privacy, Terms, Mentions légales, DPA) + SaaS authentifié (auth, onboarding, dashboard, reviews, pending, settings, billing) + **espace admin** (`/admin`, `/admin/clients`, `/admin/clients/[id]`, `/admin/validation`, `/admin/monitoring`, `/admin/deletions`) réservé au rôle `admin` via middleware + garde server-side dans `app/admin/layout.tsx`.
 - **Charte graphique** : Fraunces (titres) + Inter (corps), palette marine `#0B1E3F`. Référence visuelle : [`BRIEF.md`](../gbp-pilot-review-website/BRIEF.md).
 - **i18n** : FR uniquement au lancement (la structure next-intl a été retirée pour simplifier).
 - **Build** : 23 pages compilent, 14 tests Vitest passent.
