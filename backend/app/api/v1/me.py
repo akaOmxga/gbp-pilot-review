@@ -3,6 +3,8 @@ from fastapi import APIRouter, status
 from app.api.deps import CurrentUser
 from app.database import SessionDep
 from app.schemas.auth import UserPublic
+from app.schemas.export import UserDataExport
+from app.services.gdpr_service import GDPRService
 
 router = APIRouter(prefix="/me", tags=["me"])
 
@@ -18,3 +20,8 @@ async def delete_me(user: CurrentUser, session: SessionDep) -> None:
 
     user.deleted_at = datetime.now(UTC)
     await session.commit()
+
+
+@router.get("/export", response_model=UserDataExport)
+async def export_me(user: CurrentUser, session: SessionDep) -> UserDataExport:
+    return await GDPRService(session).export_user_data(user)

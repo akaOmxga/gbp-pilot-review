@@ -43,14 +43,13 @@ async def signup(payload: SignupRequest, session: SessionDep) -> UserPublic:
         business_name=payload.business_name,
     )
     verification_token = await service.issue_email_verification(user.id)
-    logger.info("Email verification token (dev): {t}", t=verification_token)
+    if get_settings().environment == "development":
+        logger.info("Email verification token (dev): {t}", t=verification_token)
     return UserPublic.model_validate(user)
 
 
 @router.post("/login", response_model=TokenPair)
-async def login(
-    payload: LoginRequest, session: SessionDep, response: Response
-) -> TokenPair:
+async def login(payload: LoginRequest, session: SessionDep, response: Response) -> TokenPair:
     service = AuthService(session)
     _, access, refresh = await service.login(email=payload.email, password=payload.password)
     _set_refresh_cookie(response, refresh)
@@ -80,17 +79,13 @@ async def verify_email(payload: EmailVerify, session: SessionDep) -> UserPublic:
 
 
 @router.post("/password-reset/request", status_code=status.HTTP_204_NO_CONTENT)
-async def password_reset_request(
-    payload: PasswordResetRequest, session: SessionDep
-) -> None:
+async def password_reset_request(payload: PasswordResetRequest, session: SessionDep) -> None:
     token = await AuthService(session).request_password_reset(payload.email)
-    if token:
+    if token and get_settings().environment == "development":
         logger.info("Password reset token (dev): {t}", t=token)
 
 
 @router.post("/password-reset/confirm", response_model=UserPublic)
-async def password_reset_confirm(
-    payload: PasswordResetConfirm, session: SessionDep
-) -> UserPublic:
+async def password_reset_confirm(payload: PasswordResetConfirm, session: SessionDep) -> UserPublic:
     user = await AuthService(session).reset_password(payload.token, payload.password)
     return UserPublic.model_validate(user)

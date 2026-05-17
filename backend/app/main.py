@@ -18,6 +18,7 @@ from app.config import Settings, get_settings
 from app.database import get_engine
 from app.logging_config import configure_logging
 from app.utils.correlation import CorrelationIdMiddleware
+from app.utils.security_headers import SecurityHeadersMiddleware
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["1000/minute"])
 
@@ -66,6 +67,10 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        is_production=settings.environment == "production",
     )
 
     @app.get("/healthz", tags=["meta"])

@@ -55,8 +55,37 @@ Phase 3 (backend core) **complète** — 15 PRs livrés :
   - Garde `owner_or_admin` ajoutée sur `/responses/*` pour autoriser l'admin sur les actions rapides.
 - **PR 14 — Tests** : 27 tests unitaires (auth/JWT, encryption Fernet, retry decorator, time.compute_publish_at, signature Lemon Squeezy, templates notifs, OAuth authorize URL, prompt rendering, filtering matrix).
 - **PR 15 — Hardening** : slowapi rate limiting, Sentry SDK conditionnel (FastAPI + Starlette integrations), CORS strict sur `frontend_url`.
+- **Phase 6 — Tests** : extension du harnais avec fixtures DB transactionnelles (`db_session`), client FastAPI overridé (`client`), factories synchrones (`tests/factories/`), mocks Claude + Google + Lemon Squeezy. Nouveaux suites :
+  - **Unit** (`tests/unit/`) — services `generation`, `polling`, `publication`, `quota`, `oauth`, `subscription`, `dlq` + repositories transverses + utilitaires `circuit`, `language`.
+  - **Integration** (`tests/integration/`) — pipeline polling → filtering → génération → publication, webhook Lemon Squeezy (signature + idempotence), OAuth authorize/callback, retries + circuit breaker, garde admin sur `/responses/*`.
+  - **E2E** (`tests/e2e/`) — parcours signup → login → /me → OAuth, validation d'une réponse (approve + cancel), configuration des paramètres.
+  - **Load** (`tests/load/`) — `locustfile.py` (HTTP) + `simulate_pipeline.py` (20 clients × 5 reviews, mesure latences par étape).
 
-Quality gates : `uv run ruff check .` ✓, `uv run mypy app` ✓, `uv run pytest` ✓ (27 tests, ~47% coverage globale, 100% sur `utils/retry`, `security/encryption`, `models/`, `services/notification_templates`).
+Quality gates : `uv run ruff check .` ✓, `uv run mypy app` ✓, `uv run pytest` ✓.
+
+### Commandes de test
+
+```bash
+# Unit only (rapide, sans Postgres)
+uv run pytest tests/unit -m "not integration"
+
+# Suite complète (requiert Postgres + Redis)
+docker compose up -d postgres redis
+uv run pytest
+
+# Sélectivement
+uv run pytest -m integration   # tests d'intégration uniquement
+uv run pytest -m e2e           # parcours end-to-end
+uv run pytest --cov=app --cov-report=html  # rapport couverture
+
+# Charge légère (Locust HTTP)
+uv tool install locust
+uv run locust -f tests/load/locustfile.py --headless -u 20 -r 2 -t 2m \
+    --host http://localhost:8000
+
+# Charge légère (pipeline in-process avec mocks Google + Claude)
+uv run python tests/load/simulate_pipeline.py --clients 20 --reviews 5
+```
 
 ## Frontend
 
@@ -91,6 +120,7 @@ Conception technique (Phase 1) :
 - [docs/03-frontend.md](./docs/03-frontend.md) — routes Next.js, composants, auth, i18n
 - [docs/04-flows.md](./docs/04-flows.md) — OAuth Google, pipeline polling→publication, notifications, erreurs
 - [docs/05-prompts.md](./docs/05-prompts.md) — prompt système Claude, nomenclature `details`, versioning
+- [docs/06-security.md](./docs/06-security.md) — modèle de menace, contrôles, conformité RGPD, registre des traitements
 
 ## License
 

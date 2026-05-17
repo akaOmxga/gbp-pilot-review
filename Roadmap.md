@@ -243,13 +243,18 @@ Backend : migration `0002` ajoute `clients.admin_notes` ; schémas centralisés 
 
 ## Phase 7 — Sécurité et conformité
 
-### Audit sécurité
+### Audit sécurité OBLIGATOIRE ET CRUCIAL 
 - Revue des permissions et scopes OAuth
-- Vérification du chiffrement des tokens au repos
+- Vérification du chiffrement des tokens au repos 
+- make sure ;env values are not leaking
 - Audit des logs (pas de données sensibles en clair)
 - Protection contre les injections (SQL, XSS, CSRF)
 - Rate limiting sur les endpoints publics
 - Sécurisation des webhooks (signatures Lemon Squeezy)
+- check API responses for sensitive data
+- remove secret from logs
+- check security headers
+- scan against OWASP Top 10 and basics
 
 ### Conformité RGPD
 - Validation du DPA avec un juriste ou template sérieux
@@ -262,7 +267,7 @@ Backend : migration `0002` ajoute `clients.admin_notes` ; schémas centralisés 
 - Finalisation du dossier de vérification
 - Tournage de la vidéo de démonstration
 - Soumission à Google
-- Suivi et itérations si feedback de Google
+- Suivi et itérations si feedback de Google 
 
 ---
 
