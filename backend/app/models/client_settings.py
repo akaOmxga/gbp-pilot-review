@@ -24,7 +24,12 @@ class ClientSettings(Base, TimestampMixin):
     )
     polling_frequency_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=1440)
     publish_delay_range: Mapped[PublishDelayRange] = mapped_column(
-        ENUM(PublishDelayRange, name="publish_delay_range", create_type=True),
+        ENUM(
+            PublishDelayRange,
+            name="publish_delay_range",
+            create_type=True,
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
         nullable=False,
         default=PublishDelayRange.range_1d_2d,
     )

@@ -186,19 +186,31 @@ uv run alembic current             # → 0002 (head)
 uv run alembic history              # liste des révisions
 ```
 
-### Promouvoir un utilisateur en admin (Phase 5)
-
-L'inscription via `/api/v1/auth/signup` crée des comptes `role=client`. Pour accéder à l'espace `/admin` du frontend (`role=admin` requis), promouvoir un compte existant via SQL :
-
-```bash
-docker compose exec postgres psql -U app -d gbp_review_manager -c \
-  "UPDATE users SET role='admin' WHERE email='votre.email@example.com';"
-```
-
 Pour rollback complet :
 
 ```bash
 uv run alembic downgrade base
+```
+
+### Créer ton premier compte
+
+Avant de pouvoir promouvoir qui que ce soit en admin, il faut qu'un compte existe en base. L'API doit donc tourner — démarre-la d'abord (cf. §7 ci-dessous : `uv run uvicorn app.main:app --reload`), puis dans un autre terminal :
+
+```bash
+curl -sX POST http://localhost:8000/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"votre.email@example.com","password":"longpassword","business_name":"Mon Resto"}'
+```
+
+Pas besoin de lancer le frontend (`gbp-pilot-review-website`) pour cette étape — il sera utile plus tard pour tester l'UX, mais le compte se crée très bien via l'API seule. À noter : `verify-email` n'est pas requis pour la promotion admin.
+
+### Promouvoir un utilisateur en admin (Phase 5)
+
+Le signup ci-dessus crée des comptes `role=client`. Pour accéder à l'espace `/admin` du frontend (`role=admin` requis), promouvoir le compte existant via SQL :
+
+```bash
+docker compose exec postgres psql -U app -d gbp_review_manager -c \
+  "UPDATE users SET role='admin' WHERE email='votre.email@example.com';"
 ```
 
 ---
