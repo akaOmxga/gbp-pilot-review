@@ -554,7 +554,7 @@ wheels = [
 ]
 
 [[package]]
-name = "gbp-review-manager"
+name = "gbp-pilot-review"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

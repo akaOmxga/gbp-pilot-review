@@ -169,3 +169,4 @@ marimo/_lsp/
 __marimo__/
 backend/.env
 secrets.txt
+certificats/

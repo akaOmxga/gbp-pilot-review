@@ -1,0 +1,66 @@
+# ============================================================================
+# Caddyfile — reverse proxy pour gbp-pilot-review
+# ============================================================================
+
+# Désactive l'admin API de Caddy (sécurité : pas de port d'admin écouté)
+{
+	admin off
+	auto_https off
+}
+
+# Force HTTP → HTTPS (Cloudflare envoie déjà du HTTPS, mais ceinture/bretelles)
+http://api.pilot-review.com {
+	redir https://api.pilot-review.com{uri} permanent
+}
+
+# Site principal : api.pilot-review.com
+api.pilot-review.com {
+	# TLS avec le Cloudflare Origin Certificate (15 ans de validité)
+	# Les fichiers sont montés depuis /etc/caddy du VPS (voir docker-compose.prod.yml)
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
+	# Compression
+	encode gzip zstd
+
+	# Headers de sécurité
+	header {
+		# HSTS : force HTTPS sur 2 ans
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		# Empêche MIME-sniffing
+		X-Content-Type-Options "nosniff"
+		# Referer minimaliste
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Anti-clickjacking
+		X-Frame-Options "DENY"
+		# Retire la signature serveur par défaut
+		-Server
+	}
+
+	# Limite la taille des requêtes (anti-DoS basique)
+	request_body {
+		max_size 10MB
+	}
+
+	# Logs structurés en JSON (consommables par Loki/Promtail plus tard)
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+
+	# Reverse proxy vers le service api Docker sur le port 8000
+	reverse_proxy api:8000 {
+		# Timeouts adaptés (l'IA peut prendre du temps)
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+			read_timeout 60s
+			write_timeout 60s
+		}
+
+		# Header utile pour le backend : on récupère la vraie IP du client via Cloudflare
+		# (X-Forwarded-For et X-Forwarded-Proto sont déjà ajoutés automatiquement par Caddy)
+		header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+		header_up Host {host}
+	}
+}
