@@ -5,7 +5,7 @@ readonly REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 readonly COMPOSE_FILE="${REPO_DIR}/docker-compose.prod.yml"
 readonly TS=$(date -u +%Y%m%dT%H%M%SZ)
 readonly BACKUP_FILE="/tmp/db-${TS}.sql.gz"
-readonly R2_BUCKET="r2:gbp-pilot-review-backups"
+readonly R2_BUCKET="r2:gbp-pilot-review-backup"
 
 cd "$REPO_DIR"
 
