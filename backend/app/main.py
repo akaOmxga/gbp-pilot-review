@@ -73,6 +73,10 @@ def create_app() -> FastAPI:
         is_production=settings.environment == "production",
     )
 
+    @app.get("/healthz", tags=["meta"])
+    async def healthz() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.get("/sentry-debug", tags=["meta"], include_in_schema=False)
     async def sentry_debug() -> None:
         """Trigger an unhandled exception for Sentry connectivity test."""
