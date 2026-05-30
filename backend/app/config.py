@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     secret_key: SecretStr
     frontend_url: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000"
 
     database_url: PostgresDsn
     redis_url: RedisDsn
@@ -52,6 +53,11 @@ class Settings(BaseSettings):
     rate_limit_login_per_minute: int = 5
 
     undo_grace_period_minutes: int = Field(default=10, ge=1, le=60)
+
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache(maxsize=1)
